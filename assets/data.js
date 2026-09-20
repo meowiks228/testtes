@@ -100,15 +100,16 @@
     }
   ];
 
-  const names = {
-    male: ['Джаспер Белл', 'Дилан Лавуа', 'Ноа Диас', 'Ралф Стоун', 'Спайк Нгуен', 'Уилл Фортен', 'Хектор Майерс'],
-    female: ['Ииша Хьюз', 'Карин Гарднер', 'Лилли Морен', 'Кейтлин Боуэн', 'Нарель Эванс', 'Пенни Келли', 'Челси Рид']
-  };
+  const names = Object.freeze({
+    male: Object.freeze(['Джаспер Белл', 'Дилан Лавуа', 'Ноа Диас', 'Ралф Стоун', 'Спайк Нгуен', 'Уилл Фортен', 'Хектор Майерс']),
+    female: Object.freeze(['Ииша Хьюз', 'Карин Гарднер', 'Лилли Морен', 'Кейтлин Боуэн', 'Нарель Эванс', 'Пенни Келли', 'Челси Рид'])
+  });
 
   window.LokilandData = Object.freeze({
     format: 'LOKILAND_RESULTS',
     version: '1',
     characters: Object.freeze(characters),
-    names: Object.freeze(names)
+    names,
+    allNames: Object.freeze([...names.male, ...names.female])
   });
 })();

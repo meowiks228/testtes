@@ -62,8 +62,8 @@
       };
       const selectedAnswers = draft.answers.filter(Boolean);
       const unique = new Set(selectedAnswers);
-      const validPartial = selectedAnswers.length === unique.size && draft.answers.every((answer, index) => {
-        return answer === null || data.names[data.characters[index].gender].includes(answer);
+      const validPartial = selectedAnswers.length === unique.size && draft.answers.every(answer => {
+        return answer === null || data.allNames.includes(answer);
       });
       if (!validPartial || String(candidate.participantName || '').trim().length > 60) return;
       state.participantName = String(draft.participantName || '').trim();
@@ -80,7 +80,6 @@
 
   function renderQuestion() {
     const character = data.characters[state.current];
-    const availableNames = data.names[character.gender];
     const used = new Set(state.answers.filter(Boolean));
     const answered = state.answers.filter(Boolean).length;
     const percent = Math.round((answered / data.characters.length) * 100);
@@ -99,18 +98,27 @@
       <h2>${character.role}</h2>
       <p class="character-description">${character.text}</p>
       <div class="choice-title"><span>ВЫБЕРИТЕ ИМЯ</span></div>
-      <div class="names-grid" role="radiogroup" aria-label="Имена для персонажа ${character.id}">
-        ${availableNames.map((name, index) => {
-          const selected = state.answers[state.current] === name;
-          const unavailable = used.has(name) && !selected && !state.allowSwap;
-          return `
-            <button class="name-option${selected ? ' selected' : ''}${unavailable ? ' used' : ''}"
-              type="button" aria-pressed="${selected}" data-name="${name}" ${unavailable ? 'disabled' : ''}>
-              <span class="radio" aria-hidden="true"></span>
-              <b>${name}</b>
-              <small>${unavailable ? 'УЖЕ ВЫБРАНО' : `КАНДИДАТ ${String(index + 1).padStart(2, '0')}`}</small>
-            </button>`;
-        }).join('')}
+      <div class="name-groups" aria-label="Имена для персонажа ${character.id}">
+        ${[
+          ['МУЖСКИЕ ИМЕНА', data.names.male, 0],
+          ['ЖЕНСКИЕ ИМЕНА', data.names.female, data.names.male.length]
+        ].map(([label, names, offset]) => `
+          <section class="name-group" aria-label="${label.toLowerCase()}">
+            <div class="name-group-title"><span>${label}</span><small>${names.length} ВАРИАНТОВ</small></div>
+            <div class="names-grid">
+              ${names.map((name, index) => {
+                const selected = state.answers[state.current] === name;
+                const unavailable = used.has(name) && !selected && !state.allowSwap;
+                return `
+                  <button class="name-option${selected ? ' selected' : ''}${unavailable ? ' used' : ''}"
+                    type="button" aria-pressed="${selected}" data-name="${name}" ${unavailable ? 'disabled' : ''}>
+                    <span class="radio" aria-hidden="true"></span>
+                    <b>${name}</b>
+                    <small>${unavailable ? 'УЖЕ ВЫБРАНО' : `ИМЯ ${String(offset + index + 1).padStart(2, '0')}`}</small>
+                  </button>`;
+              }).join('')}
+            </div>
+          </section>`).join('')}
       </div>`;
 
     document.querySelectorAll('.name-option:not(:disabled)').forEach(button => {
@@ -161,10 +169,57 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function submissionCsv() {
+    return utils.encodeCsv(utils.submissionRows(state.completedSubmission, data.characters));
+  }
+
   function downloadSubmission() {
     if (!state.completedSubmission) return;
-    const csv = utils.encodeCsv(utils.submissionRows(state.completedSubmission, data.characters));
-    downloadText(csv, state.completedFileName, 'text/csv;charset=utf-8');
+    downloadText(submissionCsv(), state.completedFileName, 'text/csv;charset=utf-8');
+  }
+
+  async function copyShareText(text) {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.append(textArea);
+    textArea.select();
+    const copied = document.execCommand('copy');
+    textArea.remove();
+    if (!copied) throw new Error('Копирование не поддерживается');
+  }
+
+  async function shareSubmission() {
+    if (!state.completedSubmission) return;
+    const text = utils.formatShareText(state.completedSubmission, data.characters);
+    const shareData = { title: 'Лагерь Локиленд — мои ответы', text };
+
+    if (navigator.share) {
+      try {
+        if (typeof File === 'function' && navigator.canShare) {
+          const csvFile = new File([submissionCsv()], state.completedFileName, { type: 'text/csv;charset=utf-8' });
+          if (navigator.canShare({ files: [csvFile] })) shareData.files = [csvFile];
+        }
+        await navigator.share(shareData);
+        toast('Ответы отправлены.');
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+      }
+    }
+
+    try {
+      await copyShareText(text);
+      toast('Ответы скопированы. Вставьте их в сообщение.');
+    } catch {
+      toast('Не удалось открыть отправку. Скачайте CSV кнопкой ниже.');
+    }
   }
 
   $('#startForm').addEventListener('submit', event => {
@@ -230,6 +285,7 @@
     downloadSubmission();
   });
 
+  $('#shareButton').addEventListener('click', shareSubmission);
   $('#downloadAgainButton').addEventListener('click', downloadSubmission);
   $('#restartButton').addEventListener('click', () => {
     clearDraft();

@@ -41,7 +41,7 @@
       <div class="rules" aria-label="Правила теста">
         <div><b>01</b><span>Читай описание целиком</span></div>
         <div><b>02</b><span>Каждое имя — только один раз</span></div>
-        <div><b>03</b><span>Скачай таблицу после теста</span></div>
+        <div><b>03</b><span>Поделись ответами после теста</span></div>
       </div>
 
       <form id="startForm" class="start-form" novalidate>
@@ -77,31 +77,32 @@
       <div class="section-heading">
         <div>
           <h2 id="reviewTitle">Все совпадения</h2>
-          <p>Проверь ответы перед созданием таблицы. Можно вернуться к любому персонажу и заменить имя.</p>
+          <p>Проверь ответы перед отправкой. Можно вернуться к любому персонажу и заменить имя.</p>
         </div>
         <span class="stamp">14 / 14</span>
       </div>
       <div id="reviewGrid" class="review-grid"></div>
       <div class="review-actions">
         <button id="backToQuizButton" class="button ghost" type="button">← ИЗМЕНИТЬ</button>
-        <button id="finishButton" class="button primary" type="button">СОЗДАТЬ ТАБЛИЦУ ↓</button>
+        <button id="finishButton" class="button primary" type="button">ПОДГОТОВИТЬ ОТВЕТЫ →</button>
       </div>
     </section>
 
     <section id="success" class="panel success hidden" aria-labelledby="successTitle">
       <div class="success-mark" aria-hidden="true">✓</div>
       <span class="eyebrow">АНКЕТА ГОТОВА</span>
-      <h2 id="successTitle">Таблица создана</h2>
-      <p>Файл содержит твоё имя и все 14 ответов в одной строке. Отправь его администратору — так результаты разных людей не смешаются.</p>
+      <h2 id="successTitle">Ответы готовы</h2>
+      <p>Нажми «Поделиться» и выбери Telegram, WhatsApp или другое приложение. В сообщение попадут твоё имя и все 14 ответов.</p>
       <div class="file-ticket">
         <span>ФАЙЛ РЕЗУЛЬТАТА</span>
         <b id="fileName">lokiland-result.csv</b>
       </div>
       <div class="success-actions">
-        <button id="downloadAgainButton" class="button primary" type="button">СКАЧАТЬ ЕЩЁ РАЗ ↓</button>
+        <button id="shareButton" class="button primary share-button" type="button">ПОДЕЛИТЬСЯ ↗</button>
+        <button id="downloadAgainButton" class="button ghost" type="button">СКАЧАТЬ CSV ↓</button>
         <button id="restartButton" class="button ghost" type="button">ПРОЙТИ ЗАНОВО</button>
       </div>
-      <p class="privacy-note">Если скачивание не началось автоматически, нажми кнопку выше.</p>
+      <p class="privacy-note">Если меню отправки не поддерживается, ответы будут скопированы — останется вставить их в сообщение.</p>
     </section>
   </main>
 

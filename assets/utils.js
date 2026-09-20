@@ -122,15 +122,28 @@
     if (typeof submission.createdAt !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(submission.createdAt) || Number.isNaN(Date.parse(submission.createdAt))) return 'Некорректная дата анкеты.';
     if (!Array.isArray(submission.answers) || submission.answers.length !== data.characters.length) return `Ожидалось ${data.characters.length} ответов.`;
 
+    const allowed = data.allNames || [...data.names.male, ...data.names.female];
     const used = new Set();
     for (let index = 0; index < data.characters.length; index += 1) {
       const answer = submission.answers[index];
-      const allowed = data.names[data.characters[index].gender];
       if (!allowed.includes(answer)) return `Недопустимое имя в ответе №${index + 1}.`;
       if (used.has(answer)) return `Имя «${answer}» использовано повторно.`;
       used.add(answer);
     }
     return null;
+  }
+
+  function formatShareText(submission, characters) {
+    const lines = characters.map((character, index) => {
+      return `${String(character.id).padStart(2, '0')}. ${character.role} — ${submission.answers[index]}`;
+    });
+    return [
+      `ЛАГЕРЬ ЛОКИЛЕНД — ответы ${submission.participantName}`,
+      '',
+      ...lines,
+      '',
+      `ID анкеты: ${submission.submissionId}`
+    ].join('\n');
   }
 
   function safeFilePart(value) {
@@ -141,7 +154,7 @@
       .slice(0, 36) || 'participant';
   }
 
-  const api = { csvProtect, csvRestore, encodeCsv, parseCsv, createSubmission, submissionRows, submissionFromRows, validateSubmission, safeFilePart };
+  const api = { csvProtect, csvRestore, encodeCsv, parseCsv, createSubmission, submissionRows, submissionFromRows, validateSubmission, formatShareText, safeFilePart };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   globalThis.LokilandUtils = api;
 })();

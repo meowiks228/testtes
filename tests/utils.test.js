@@ -11,12 +11,7 @@ vm.runInContext(fs.readFileSync(path.join(root, 'assets', 'data.js'), 'utf8'), d
 const data = dataContext.window.LokilandData;
 const utils = require('../assets/utils.js');
 
-const genderOffsets = { male: 0, female: 0 };
-const answers = Array.from(data.characters, character => {
-  const answer = data.names[character.gender][genderOffsets[character.gender]];
-  genderOffsets[character.gender] += 1;
-  return answer;
-});
+const answers = Array.from(data.allNames);
 
 function makeSubmission(overrides = {}) {
   return {
@@ -40,10 +35,16 @@ test('duplicate name is rejected', () => {
   assert.match(utils.validateSubmission(makeSubmission({ answers: duplicateAnswers }), data), /повторно/);
 });
 
-test('name from wrong gender list is rejected', () => {
-  const wrongAnswers = Array.from(answers);
-  wrongAnswers[0] = answers[1];
-  assert.match(utils.validateSubmission(makeSubmission({ answers: wrongAnswers }), data), /Недопустимое имя/);
+test('cross-category name assignments are accepted', () => {
+  const mixedAnswers = Array.from(answers);
+  [mixedAnswers[0], mixedAnswers[7]] = [mixedAnswers[7], mixedAnswers[0]];
+  assert.equal(utils.validateSubmission(makeSubmission({ answers: mixedAnswers }), data), null);
+});
+
+test('unknown name is rejected', () => {
+  const unknownAnswers = Array.from(answers);
+  unknownAnswers[0] = 'Неизвестное Имя';
+  assert.match(utils.validateSubmission(makeSubmission({ answers: unknownAnswers }), data), /Недопустимое имя/);
 });
 
 test('CSV round trip preserves Cyrillic, quotes and formulas safely', () => {
@@ -72,4 +73,17 @@ test('numeric IDs and non-ISO dates are rejected', () => {
 
 test('malformed text after a closing CSV quote is rejected', () => {
   assert.throws(() => utils.parseCsv('"Имя"x;"Ответ"'), /лишний символ/);
+});
+
+test('all name categories contain 14 unique names', () => {
+  assert.equal(data.allNames.length, 14);
+  assert.equal(new Set(data.allNames).size, 14);
+});
+
+test('share text contains participant and every answer', () => {
+  const text = utils.formatShareText(makeSubmission(), data.characters);
+  assert.match(text, /Тестовый участник/);
+  assert.match(text, /01\. Контент-креатор — Джаспер Белл/);
+  assert.match(text, /14\. Коуч по заработку — Челси Рид/);
+  assert.equal(text.split('\n').filter(line => /^\d{2}\./.test(line)).length, 14);
 });
